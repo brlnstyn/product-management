@@ -1,0 +1,3 @@
+D:/UNSIA/Semester 2/Struktur Data dan Algoritma/UTS_SDA_IF206/cmake-build-debug/CMakeFiles/e_commerce.dir
+D:/UNSIA/Semester 2/Struktur Data dan Algoritma/UTS_SDA_IF206/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/UNSIA/Semester 2/Struktur Data dan Algoritma/UTS_SDA_IF206/cmake-build-debug/CMakeFiles/rebuild_cache.dir
