@@ -1,8 +1,11 @@
+#include <algorithm>
 #include <iostream>
 #include <stack>
 #include <queue>
 #include <vector>
 #include <limits>
+#include <set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -114,6 +117,7 @@ void searchProductByCategory(const string &category) {
 
 CartNode *cartHead = nullptr;
 stack<CartNode *> undoStack;
+
 void addToCart(int productId, int qty) {
     Product p = findProductById(productId);
     if (p.id == -1) {
@@ -179,6 +183,7 @@ void undoLastAdd() {
 // --------------------- CHECKOUT (QUEUE) ---------------------
 
 queue<string> transactionQueue;
+
 void transaction(const string &username) {
     if (!cartHead) {
         cout << "Cart is empty. Can not make transaction.\n";
@@ -235,6 +240,10 @@ void showMenu() {
     cout << "6. Undo Last Product Addition\n";
     cout << "7. Transaction\n";
     cout << "8. Show Transaction Queue\n";
+    cout << "9. Check Recommendation\n";
+    cout << "10. Find Bundling Combination\n";
+    cout << "11. Search Product by Id\n";
+    cout << "12. Sorting Product by Price\n";
     cout << "0. Close\n";
     cout << "Choose Menu: ";
 }
@@ -242,6 +251,172 @@ void showMenu() {
 void clearCin() {
     cin.clear();
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
+
+unordered_map<string, vector<string> > adjList;
+
+void addProductRelation(const string &productA, const string &productB) {
+    adjList[productA].push_back(productB);
+    adjList[productB].push_back(productA);
+}
+
+// Rekomendasi produk berdasarkan BFS
+vector<string> recommendBFS(const string &startProduct, int maxDepth = 2) {
+    set<string> visited;
+    queue<pair<string, int> > q;
+    vector<string> recommendations;
+
+    q.push({startProduct, 0});
+    visited.insert(startProduct);
+
+    while (!q.empty()) {
+        auto [current, depth] = q.front();
+        q.pop();
+
+        if (depth > 0) {
+            recommendations.push_back(current);
+        }
+
+        if (depth < maxDepth) {
+            for (const auto &neighbor: adjList[current]) {
+                if (!visited.count(neighbor)) {
+                    visited.insert(neighbor);
+                    q.push({neighbor, depth + 1});
+                }
+            }
+        }
+    }
+    return recommendations;
+}
+
+void printGraph() {
+    cout << "\nGraph Produk:\n";
+    for (const auto &p: adjList) {
+        cout << "- " << p.first << " terhubung dengan: ";
+        for (const auto &q: p.second) {
+            cout << q << ", ";
+        }
+        cout << "\n";
+    }
+}
+
+void checkRecommendation(const string &product) {
+    addProductRelation("Toast", "Americano");
+    addProductRelation("Americano", "Latte");
+    addProductRelation("Nasi Goreng", "Americano");
+    addProductRelation("Nasi Goreng", "Jasmin Tea");
+    addProductRelation("Jasmin Tea", "Salad Buah");
+
+    printGraph();
+
+    vector<string> recommendations = recommendBFS(product);
+
+    cout << "Recommendations are:\n";
+    for (const auto &recommendation: recommendations) {
+        cout << "- " << recommendation << "\n";
+    }
+}
+
+void dfsHelper(const string &currentProduct, set<string> &visited, vector<string> &path, int maxDepth) {
+    if (path.size() > 0) {
+        cout << "Bundling: ";
+        for (const string &prod: path) {
+            cout << prod << " ";
+        }
+        cout << "\n";
+    }
+
+    if (path.size() == maxDepth) return;
+
+    for (const string &neighbor: adjList[currentProduct]) {
+        if (!visited.count(neighbor)) {
+            visited.insert(neighbor);
+            path.push_back(neighbor);
+            dfsHelper(neighbor, visited, path, maxDepth);
+            path.pop_back();
+            visited.erase(neighbor);
+        }
+    }
+}
+
+void findBundlingCombination(const string &product) {
+    set<string> visited;
+    vector<string> path;
+
+    visited.insert(product);
+    path.push_back(product);
+
+    cout << "Kombinasi bundling produk dari " << product << "\n";
+    dfsHelper(product, visited, path, 3);
+}
+
+void bundlingRecommendation(const string &product) {
+    addProductRelation("Toast", "Americano");
+    addProductRelation("Americano", "Latte");
+    addProductRelation("Nasi Goreng", "Americano");
+    addProductRelation("Nasi Goreng", "Jasmin Tea");
+    addProductRelation("Jasmin Tea", "Salad Buah");
+
+    findBundlingCombination(product);
+}
+
+bool compareById(const Product &a, const Product &b) {
+    return a.id < b.id;
+}
+
+int binarySearch(Product arr[], int n, int targetId) {
+    int left = 0;
+    int right = n - 1;
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (arr[mid].id == targetId) {
+            return mid;
+        } else if (arr[mid].id < targetId) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    return -1;
+}
+
+void searchById() {
+    int n = sizeof(productList) / sizeof(Product);
+
+    sort(productList, productList + n, compareById);
+
+    int idSearch;
+    cout << "Enter Id Product to search: ";
+    cin >> idSearch;
+
+    int index = binarySearch(productList, n, idSearch);
+
+    if(index != -1) {
+        cout << "Product found!\n";
+        cout << "Id: " << productList[index].id << endl;
+        cout << "Name: " << productList[index].name << endl;
+        cout << "Category: " << productList[index].category << endl;
+        cout << "Price: " << productList[index].price << endl;
+        cout << "Stock: " << productList[index].stock << endl;
+    }else {
+        cout << "Product not found!\n";
+    }
+}
+
+bool compareByPriceAsc(const Product &a, const Product &b) {
+    return a.price < b.price;
+}
+
+void sortingByPrice() {
+    int n = sizeof(productList) / sizeof(Product);
+    sort(productList, productList + n, compareByPriceAsc);
+
+    cout << "Product sorted by price:\n";
+    for (int i = 0; i < n; i++) {
+        cout << productList[i].name << " - Rp " << productList[i].price << endl;
+    }
 }
 
 // --------------------- MAIN ---------------------
@@ -295,6 +470,26 @@ int main() {
             }
             case 8:
                 printTransactionQueue();
+                break;
+            case 9: {
+                string productName;
+                cout << "Product Name: ";
+                getline(cin, productName);
+                checkRecommendation(productName);
+                break;
+            }
+            case 10: {
+                string productName;
+                cout << "Product Name: ";
+                getline(cin, productName);
+                bundlingRecommendation(productName);
+                break;
+            }
+            case 11:
+                searchById();
+                break;
+            case 12:
+                sortingByPrice();
                 break;
             case 0:
                 cout << "Thank you for using our service! Happy Shopping!\n";
